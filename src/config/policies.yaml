@@ -1,0 +1,33 @@
+organization:
+  name: "Your Organization"
+
+naming:
+  pattern: "{environment}-{application}-{resource}"
+
+tags:
+  required:
+    - Environment
+    - CostCenter
+    - Owner
+    - ManagedBy
+  defaults:
+    ManagedBy: terraform
+
+security:
+  encryption_required: true
+  private_subnets_only: true
+  backup_required: true
+
+resources:
+  rds:
+    allowed_engines:
+      - postgres
+      - mysql
+    min_backup_days: 7
+    encryption: true
+  s3:
+    versioning: true
+    encryption: AES256
+  eks:
+    min_nodes: 2
+    private_endpoint: true

@@ -54,3 +54,5 @@ Thumbs.db
 *.tfstate
 *.tfstate.backup
 .terraform/
+
+docs/

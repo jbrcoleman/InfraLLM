@@ -35,23 +35,92 @@ def provision(request: str, verbose: bool):
     Example:
         infrallm provision "I need a production Postgres database for the payments API"
     """
+    from src.llm.client import ClaudeClient
+    from src.llm.exceptions import (
+        ConfigurationError,
+        APIError,
+        ValidationError as PolicyValidationError,
+        ParsingError
+    )
+
     console.print(Panel.fit(
         f"[bold cyan]Provisioning Infrastructure[/bold cyan]\n\n{request}",
         border_style="cyan"
     ))
 
     try:
-        # TODO: Phase 2 - Implement Claude API integration
-        console.print("[yellow]⚠ This feature will be implemented in Phase 2[/yellow]")
+        # Initialize Claude client
+        client = ClaudeClient()
 
-        # Placeholder workflow:
-        # 1. Parse infrastructure request using Claude
-        # 2. Generate Terraform code
-        # 3. Validate against policies
-        # 4. Create GitHub PR
+        # Parse infrastructure request
+        with console.status("[bold blue]Parsing infrastructure request with Claude..."):
+            requirements = client.parse_infrastructure_request(request)
+
+        # Display parsed requirements
+        console.print("\n[bold green]✓ Successfully Parsed Requirements[/bold green]\n")
+
+        console.print(f"  [cyan]Resource Type:[/cyan] {requirements['resource_type'].upper()}")
+        console.print(f"  [cyan]Resource Name:[/cyan] {requirements['resource_name']}")
+        console.print(f"  [cyan]Environment:[/cyan] {requirements['environment']}")
+
+        # Show key parameters
+        console.print(f"\n  [cyan]Parameters:[/cyan]")
+        for key, value in list(requirements['parameters'].items())[:5]:
+            console.print(f"    • {key}: {value}")
+        if len(requirements['parameters']) > 5:
+            console.print(f"    • ... and {len(requirements['parameters']) - 5} more")
+
+        # Show tags
+        console.print(f"\n  [cyan]Tags:[/cyan]")
+        for key, value in requirements['tags'].items():
+            console.print(f"    • {key}: {value}")
+
+        if verbose:
+            console.print("\n[bold]Full JSON Output:[/bold]")
+            console.print_json(data=requirements)
+
+        # TODO: Phase 3 - Generate Terraform code
+        console.print("\n[yellow]⚠ Terraform generation will be implemented in Phase 3[/yellow]")
+
+        # TODO: Phase 4 - Create GitHub PR
+        console.print("[yellow]⚠ GitHub PR creation will be implemented in Phase 4[/yellow]")
+
+    except ConfigurationError as e:
+        console.print(f"\n[bold red]Configuration Error:[/bold red] {str(e)}")
+        console.print("\n[yellow]Fix:[/yellow] Ensure ANTHROPIC_API_KEY is set in your .env file")
+        console.print("[dim]Example: export ANTHROPIC_API_KEY=sk-ant-...[/dim]")
+        raise click.Abort()
+
+    except PolicyValidationError as e:
+        console.print(f"\n[bold red]Policy Validation Failed:[/bold red]")
+        console.print(f"\nYour request violates {len(e.violations)} organizational policy/policies:\n")
+        for i, violation in enumerate(e.violations, 1):
+            console.print(f"  {i}. {violation}")
+        console.print("\n[yellow]Tip:[/yellow] Review your organization's policies in src/config/policies.yaml")
+        raise click.Abort()
+
+    except ParsingError as e:
+        console.print(f"\n[bold red]Parsing Error:[/bold red] {str(e)}")
+        console.print("\n[yellow]Tip:[/yellow] Try rephrasing your request with more specific details")
+        if verbose:
+            import traceback
+            console.print("\n[dim]" + traceback.format_exc() + "[/dim]")
+        raise click.Abort()
+
+    except APIError as e:
+        console.print(f"\n[bold red]API Error:[/bold red] {str(e)}")
+        console.print("\n[yellow]Troubleshooting:[/yellow]")
+        console.print("  1. Verify your ANTHROPIC_API_KEY is valid")
+        console.print("  2. Check your network connection")
+        console.print("  3. Visit https://status.anthropic.com for service status")
+        raise click.Abort()
 
     except Exception as e:
-        console.print(f"[bold red]Error:[/bold red] {str(e)}")
+        console.print(f"\n[bold red]Unexpected Error:[/bold red] {str(e)}")
+        if verbose:
+            import traceback
+            console.print("\n[dim]Full traceback:[/dim]")
+            console.print(traceback.format_exc())
         raise click.Abort()
 
 
@@ -65,22 +134,71 @@ def dry_run(request: str, verbose: bool):
     Example:
         infrallm dry-run "staging S3 bucket for log aggregation"
     """
+    from src.llm.client import ClaudeClient
+    from src.llm.exceptions import (
+        ConfigurationError,
+        APIError,
+        ValidationError as PolicyValidationError,
+        ParsingError
+    )
+
     console.print(Panel.fit(
         f"[bold yellow]Dry Run Mode[/bold yellow]\n\n{request}",
         border_style="yellow"
     ))
 
     try:
-        # TODO: Phase 2-3 - Implement dry-run logic
-        console.print("[yellow]⚠ This feature will be implemented in Phases 2-3[/yellow]")
+        # Initialize Claude client
+        client = ClaudeClient()
 
-        # Placeholder workflow:
-        # 1. Parse infrastructure request
-        # 2. Generate Terraform code
-        # 3. Display code to console (no PR creation)
+        # Parse infrastructure request
+        with console.status("[bold blue]Parsing infrastructure request with Claude..."):
+            requirements = client.parse_infrastructure_request(request)
+
+        # Display parsed requirements
+        console.print("\n[bold green]✓ Dry Run - No Changes Will Be Made[/bold green]\n")
+
+        console.print(Panel.fit(
+            f"[bold]Resource:[/bold] {requirements['resource_type'].upper()}\n"
+            f"[bold]Name:[/bold] {requirements['resource_name']}\n"
+            f"[bold]Environment:[/bold] {requirements['environment']}",
+            title="Parsed Infrastructure Request",
+            border_style="yellow"
+        ))
+
+        # Always show full JSON in dry-run mode
+        console.print("\n[bold]Full Configuration:[/bold]")
+        console.print_json(data=requirements)
+
+        # TODO: Phase 3 - Show generated Terraform code
+        console.print("\n[yellow]⚠ Terraform code preview will be implemented in Phase 3[/yellow]")
+
+    except ConfigurationError as e:
+        console.print(f"\n[bold red]Configuration Error:[/bold red] {str(e)}")
+        console.print("\n[yellow]Fix:[/yellow] Ensure ANTHROPIC_API_KEY is set in your .env file")
+        raise click.Abort()
+
+    except PolicyValidationError as e:
+        console.print(f"\n[bold red]Policy Validation Failed:[/bold red]")
+        console.print(f"\nYour request violates {len(e.violations)} organizational policy/policies:\n")
+        for i, violation in enumerate(e.violations, 1):
+            console.print(f"  {i}. {violation}")
+        raise click.Abort()
+
+    except ParsingError as e:
+        console.print(f"\n[bold red]Parsing Error:[/bold red] {str(e)}")
+        console.print("\n[yellow]Tip:[/yellow] Try rephrasing your request with more details")
+        raise click.Abort()
+
+    except APIError as e:
+        console.print(f"\n[bold red]API Error:[/bold red] {str(e)}")
+        raise click.Abort()
 
     except Exception as e:
-        console.print(f"[bold red]Error:[/bold red] {str(e)}")
+        console.print(f"\n[bold red]Unexpected Error:[/bold red] {str(e)}")
+        if verbose:
+            import traceback
+            console.print("\n[dim]" + traceback.format_exc() + "[/dim]")
         raise click.Abort()
 
 

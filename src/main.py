@@ -79,11 +79,36 @@ def provision(request: str, verbose: bool):
             console.print("\n[bold]Full JSON Output:[/bold]")
             console.print_json(data=requirements)
 
-        # TODO: Phase 3 - Generate Terraform code
-        console.print("\n[yellow]⚠ Terraform generation will be implemented in Phase 3[/yellow]")
+        # Generate Terraform code
+        from src.terraform.generator import TerraformGenerator
+        from src.terraform.exceptions import TerraformGenerationError
 
-        # TODO: Phase 4 - Create GitHub PR
-        console.print("[yellow]⚠ GitHub PR creation will be implemented in Phase 4[/yellow]")
+        console.print("\n[bold blue]Generating Terraform Code...[/bold blue]")
+
+        try:
+            generator = TerraformGenerator()
+            with console.status("[bold blue]Rendering templates..."):
+                terraform = generator.generate(requirements)
+
+            console.print("[bold green]✓ Successfully Generated Terraform Code[/bold green]\n")
+
+            console.print(f"  [cyan]Files Generated:[/cyan]")
+            for filename in terraform.files.keys():
+                console.print(f"    • {filename}")
+
+            console.print(f"\n  [cyan]Output Directory:[/cyan] {terraform.get_directory_name()}")
+
+            if verbose:
+                console.print("\n[bold]Generated Terraform Preview:[/bold]")
+                console.print(terraform.format_for_display())
+
+        except TerraformGenerationError as e:
+            console.print(f"\n[bold red]Terraform Generation Error:[/bold red] {str(e)}")
+            console.print(f"\n[yellow]Tip:[/yellow] Check that templates exist for resource type '{requirements['resource_type']}'")
+            raise click.Abort()
+
+        # TODO: Phase 4 - Create GitHub PR with terraform files
+        console.print("\n[yellow]⚠ GitHub PR creation will be implemented in Phase 4[/yellow]")
 
     except ConfigurationError as e:
         console.print(f"\n[bold red]Configuration Error:[/bold red] {str(e)}")
@@ -170,8 +195,33 @@ def dry_run(request: str, verbose: bool):
         console.print("\n[bold]Full Configuration:[/bold]")
         console.print_json(data=requirements)
 
-        # TODO: Phase 3 - Show generated Terraform code
-        console.print("\n[yellow]⚠ Terraform code preview will be implemented in Phase 3[/yellow]")
+        # Generate Terraform code for preview
+        from src.terraform.generator import TerraformGenerator
+        from src.terraform.exceptions import TerraformGenerationError
+        from rich.syntax import Syntax
+
+        console.print("\n[bold blue]Generating Terraform Code Preview...[/bold blue]")
+
+        try:
+            generator = TerraformGenerator()
+            with console.status("[bold blue]Rendering templates..."):
+                terraform = generator.generate(requirements)
+
+            console.print("\n[bold green]✓ Generated Terraform Code (Preview Only)[/bold green]\n")
+
+            # Display each file with syntax highlighting
+            for filename, content in terraform.files.items():
+                console.print(f"\n[bold cyan]━━━ {filename} ━━━[/bold cyan]")
+                syntax = Syntax(content, "hcl", theme="monokai", line_numbers=True)
+                console.print(syntax)
+                console.print()
+
+            console.print(f"\n[dim]Directory: {terraform.get_directory_name()}[/dim]")
+            console.print("[dim]This is a dry-run - no files were created or PRs opened[/dim]")
+
+        except TerraformGenerationError as e:
+            console.print(f"\n[bold red]Terraform Generation Error:[/bold red] {str(e)}")
+            raise click.Abort()
 
     except ConfigurationError as e:
         console.print(f"\n[bold red]Configuration Error:[/bold red] {str(e)}")

@@ -1,10 +1,10 @@
 [tool.poetry]
 name = "infrallm"
-version = "0.1.0"
+version = "0.2.0"
 description = "AI-powered self-service infrastructure provisioning for platform engineers"
 authors = ["Platform Engineering Team"]
 readme = "README.md"
-packages = [{include = "src"}]
+packages = [{include = "src"}, {include = "infrallm_api"}]
 
 [tool.poetry.dependencies]
 python = "^3.9"
@@ -15,6 +15,8 @@ pyyaml = "^6.0.1"
 rich = "^13.7.0"
 pydantic = "^2.5.0"
 jinja2 = "^3.1.2"
+fastapi = "^0.104.0"
+uvicorn = {extras = ["standard"], version = "^0.24.0"}
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.4.3"
@@ -23,6 +25,7 @@ ruff = "^0.1.9"
 
 [tool.poetry.scripts]
 infrallm = "src.main:cli"
+infrallm-api = "infrallm_api.main:app"
 
 [build-system]
 requires = ["poetry-core"]

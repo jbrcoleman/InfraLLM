@@ -1,0 +1,32 @@
+version: '3.8'
+
+services:
+  infrallm-api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    container_name: infrallm-api
+    ports:
+      - "8000:8000"
+    environment:
+      # Load from .env file
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - GITHUB_TOKEN=${GITHUB_TOKEN}
+      - GITHUB_ORG=${GITHUB_ORG}
+      - GITHUB_REPO=${GITHUB_REPO}
+      - DEFAULT_ENVIRONMENT=${DEFAULT_ENVIRONMENT:-dev}
+    env_file:
+      - .env
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/v1/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
+    networks:
+      - infrallm-network
+
+networks:
+  infrallm-network:
+    driver: bridge

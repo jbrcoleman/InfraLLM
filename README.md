@@ -5,9 +5,21 @@
 InfraLLM is a production-ready CLI tool that uses Claude AI to translate natural language infrastructure requests into production-ready Terraform code, complete with organizational standards, security policies, and automated PR creation.
 
 [![Status](https://img.shields.io/badge/status-production--ready-green)]()
-[![Version](https://img.shields.io/badge/version-0.1.0-blue)]()
+[![Version](https://img.shields.io/badge/version-0.2.0-blue)]()
 [![Python](https://img.shields.io/badge/python-3.9+-blue)]()
 [![License](https://img.shields.io/badge/license-MIT-green)]()
+
+## 🆕 What's New in v0.2.0
+
+**InfraLLM API Service** - REST API for Backstage integration and web access!
+
+- 🌐 **FastAPI REST API**: Web-based access to InfraLLM capabilities
+- 🔄 **Async Processing**: Non-blocking provision requests with status tracking
+- 📊 **OpenAPI Docs**: Auto-generated API documentation at `/docs`
+- 🐳 **Docker Ready**: Production-ready containerization
+- 🔌 **Backstage Integration**: Designed for developer portal integration
+
+[→ API Documentation](infrallm_api/README.md) | [→ Backstage Integration Guide](docs/backstage-integration-plan.md)
 
 ## Why InfraLLM?
 
@@ -116,6 +128,69 @@ infrallm validate terraform/prod/database.tf --verbose
 - Resource-specific best practices
 - S3: versioning, encryption, public access
 - RDS: encryption, backups, engine compliance
+
+---
+
+## 🌐 API Service (New!)
+
+InfraLLM now includes a REST API for web-based access and Backstage integration.
+
+### Quick Start
+
+```bash
+# Start the API server
+./scripts/run-api.sh
+
+# Or manually
+uvicorn infrallm_api.main:app --host 0.0.0.0 --port 8000
+```
+
+**Access Points**:
+- API: http://localhost:8000
+- Interactive docs: http://localhost:8000/docs
+- Health check: http://localhost:8000/api/v1/health
+
+### Example: Provision via API
+
+```bash
+# Provision infrastructure
+curl -X POST http://localhost:8000/api/v1/provision \
+  -H "Content-Type: application/json" \
+  -d '{
+    "request": "production Postgres for payments API",
+    "requester": "developer@company.com",
+    "team": "backend-team"
+  }'
+
+# Response: {"request_id": "req-abc123", "status": "queued"}
+
+# Check status
+curl http://localhost:8000/api/v1/requests/req-abc123/status
+
+# Response includes PR URL when completed
+```
+
+### Docker Deployment
+
+```bash
+# Build image
+docker build -f Dockerfile.api -t infrallm-api:latest .
+
+# Run with docker-compose
+docker-compose -f docker-compose.api.yml up -d
+```
+
+### Features
+
+- ✅ Async request processing with background tasks
+- ✅ Real-time status tracking (queued → parsing → generating → creating_pr → completed)
+- ✅ Dry-run endpoint for previewing Terraform without creating PRs
+- ✅ User request history
+- ✅ OpenAPI/Swagger documentation
+- ✅ Health checks for monitoring
+- ✅ CORS support for web integration
+
+**Learn More**: [API Documentation](infrallm_api/README.md) | [Backstage Integration](docs/backstage-integration-plan.md)
 
 ---
 
